@@ -1,4 +1,4 @@
-name: "Build kernels"
+name: "Build kernels new"
 
 env:
   OUT_DIR: "out"
