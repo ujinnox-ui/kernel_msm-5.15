@@ -1,4 +1,4 @@
-name: "Build kernels Wifi"
+name: "Build kernels"
 
 env:
   OUT_DIR: "out"
@@ -161,10 +161,12 @@ jobs:
           CONFIG_CFG80211=m
           CONFIG_MAC80211=m
           CONFIG_RFKILL=y
+          CONFIG_WLAN_VENDOR_RALINK=y
           CONFIG_RT2X00=m
           CONFIG_RT2X00_LIB=m
           CONFIG_RT2X00_LIB_USB=m
           CONFIG_RT2X00_LIB_FIRMWARE=y
+          CONFIG_FW_LOADER=y
           CONFIG_RT2X00_LIB_CRYPTO=y
           CONFIG_RT2800_LIB=m
           CONFIG_RT2800USB=m
