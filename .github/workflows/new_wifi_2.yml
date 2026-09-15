@@ -190,6 +190,16 @@ jobs:
           CONFIG_RT2800USB_UNKNOWN=y
           EOF
 
+      - name: "🔍 Debug: verify config fragment landed"
+        working-directory: ./${{ env.kernelDir }}/${{ env.kernelName }}
+        run: |
+          echo "--- Tail of defconfig fragment (last 40 lines) ---"
+          tail -n 40 "arch/arm64/configs/${{ env.DEFCONFIG_NAME }}"
+          echo "--- grep for our RT30xx/wifi additions ---"
+          grep -nE "RT2800|RT2X00|WLAN_VENDOR_RALINK|MAC80211|CFG80211" \
+            "arch/arm64/configs/${{ env.DEFCONFIG_NAME }}" \
+            || echo "!!! NOT FOUND in raw defconfig fragment - the cat >> step itself failed or was overwritten !!!"
+
       - name: "🔧 Setup ReSukiSU"
         if: matrix.variant == 'ksu'
         working-directory: ./${{ env.kernelDir }}/${{ env.kernelName }}
@@ -318,6 +328,23 @@ jobs:
         run: |
           LTO=thin BUILD_CONFIG=${{ env.kernelDir }}/${{ env.kernelName }}/build.config.gki.aarch64 \
           build/build.sh -j$(nproc --all)
+
+      - name: "🔍 Debug: check resolved .config for RT30xx/wifi symbols"
+        if: always()
+        working-directory: ${{ env.WORK_DIR }}
+        run: |
+          # The real build already produced a fully-resolved .config
+          # somewhere under out/ - inspect it (no extra build needed) to
+          # see whether Kconfig kept or silently dropped our symbols.
+          RESOLVED_CONFIG=$(find out -maxdepth 4 -name ".config" | head -n1)
+          if [ -z "$RESOLVED_CONFIG" ]; then
+            echo "!!! Could not locate resolved .config under out/ - check out/ layout manually !!!"
+            find out -maxdepth 3 -type d
+          else
+            echo "--- Resolved .config: $RESOLVED_CONFIG ---"
+            grep -E "^CONFIG_(RT2800USB|RT2X00|WLAN_VENDOR_RALINK|MAC80211|CFG80211)=" "$RESOLVED_CONFIG" \
+              || echo "!!! Kconfig DROPPED these symbols during olddefconfig - unmet dependency in this source tree, not a workflow/YAML bug !!!"
+          fi
 
       - name: "📦 Prepare artifact"
         working-directory: ${{ env.WORK_DIR }}
